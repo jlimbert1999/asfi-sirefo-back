@@ -7,6 +7,12 @@ export class EnvVars {
 
   @IsString()
   ASFI_PASSWORD: string;
+
+  @IsString()
+  ASFI_ENDPOINT: string;
+
+  @IsString()
+  HOST: string;
 }
 
 export function validate(config: Record<string, unknown>): EnvVars {

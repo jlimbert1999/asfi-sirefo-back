@@ -1,33 +1,20 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
-import { SoapModule } from 'nestjs-soap';
-
-import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { validate } from './config';
+import { SirefoModule } from './modules/sirefo/sirefo.module';
+import { PrismaModule } from './modules/prisma/prisma.module';
+import { FilesModule } from './modules/files/files.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ validate, isGlobal: true }),
-    SoapModule.register({
-      clientName: 'SirefoClient',
-      uri: 'https://srvservicios.asfi.gob.bo/retencionesDev/ServicioRetencionFondos.svc?wsdl',
-      clientOptions: {
-        // forceSoap12Headers: false,
-        // overrideRootElement: {
-        //   namespace: 's',
-        //   xmlnsAttributes: [
-        //     {
-        //       name: 'xmlns:s',
-        //       value: 'http://www.w3.org/2003/05/soap-envelope',
-        //     },
-        //   ],
-        // },
-      },
-    }),
+    SirefoModule,
+    PrismaModule,
+    FilesModule,
   ],
-  controllers: [AppController],
+  controllers: [],
   providers: [AppService],
 })
 export class AppModule {}
