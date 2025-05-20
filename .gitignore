@@ -3,6 +3,13 @@
 /node_modules
 /build
 
+#files
+/static/uploads/*
+!/static/uploads/.gitkeep
+
+#prisma
+/generated
+
 # Logs
 logs
 *.log

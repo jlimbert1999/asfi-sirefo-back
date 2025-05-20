@@ -14,28 +14,93 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Asfi_Requests {
-  id                   Int         @id @default(autoincrement())
-  authority_position   String
-  requesting_authority String
-  request_code         String      @unique
-  department           String
-  process_type         ProccesType
-  quantity_detail      Int
-  sent_date            DateTime
-  user_name            String
-  Asfi_Files           Asfi_Files?
+model AsfiRequest {
+  id                  String             @id @default(uuid())
+  authorityPosition   String
+  requestingAuthority String
+  requestId           Int                @unique @default(autoincrement())
+  requestCode         String             @unique
+  department          String
+  quantityDetail      Int
+  sentDate            DateTime
+  userName            String
+  createdAt           DateTime           @default(now())
+  circularNumber      String?
+  processType         ProcessType
+  file                AsfiRequestFile?
+  status              RequestStatus      @default(pending)
+  fundTransfers       AsfiFundTransfer[]
+  user                User?              @relation(fields: [userId], references: [id])
+  userId              Int?
 }
 
-model Asfi_Files {
-  id              Int           @id @default(autoincrement())
-  file_name       String
-  file_url        String
-  asfi_request    Asfi_Requests @relation(fields: [asfi_request_id], references: [id])
-  asfi_request_id Int           @unique
+model AsfiFundTransfer {
+  id                  String            @id @default(uuid())
+  authorityPosition   String
+  requestingAuthority String
+  requestId           Int               @unique @default(autoincrement())
+  requestCode         String            @unique
+  department          String
+  quantityDetail      Int
+  sentDate            DateTime
+  userName            String
+  createdAt           DateTime          @default(now())
+  circularNumber      String?
+  asfiRequestId       String
+  asfiRequest         AsfiRequest       @relation(fields: [asfiRequestId], references: [id])
+  status              RequestStatus     @default(pending)
+  file                AsfiTransferFile?
+  user                User?             @relation(fields: [userId], references: [id])
+  userId              Int?
 }
 
-enum ProccesType {
+model AsfiRequestFile {
+  id            Int         @id @default(autoincrement())
+  fileName      String
+  originalName  String
+  asfiRequest   AsfiRequest @relation(fields: [asfiRequestId], references: [id], onDelete: Cascade)
+  asfiRequestId String      @unique
+}
+
+model AsfiTransferFile {
+  id                 Int              @id @default(autoincrement())
+  fileName           String
+  originalName       String
+  asfiFundTransfer   AsfiFundTransfer @relation(fields: [asfiFundTransferId], references: [id], onDelete: Cascade)
+  asfiFundTransferId String           @unique
+}
+
+model User {
+  id                 Int                @id @default(autoincrement())
+  fullName           String
+  position           String
+  asfiCredentials    AsfiCredentials?
+  login              String             @unique
+  password           String
+  active             Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  roles              String[]           @default([])
+  mustChangePassword Boolean            @default(false)
+  asfiFundTransfer   AsfiFundTransfer[]
+  asfiRequest        AsfiRequest[]
+}
+
+model AsfiCredentials {
+  id           Int    @id @default(autoincrement())
+  asfiUsername String
+  asfiPassword String
+  passwordIv   String
+  user         User   @relation(fields: [userId], references: [id])
+  userId       Int    @unique
+}
+
+enum ProcessType {
   R
   S
+}
+
+enum RequestStatus {
+  pending
+  completed
 }

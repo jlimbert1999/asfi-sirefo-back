@@ -1,6 +1,6 @@
 import { Transform, Type } from 'class-transformer';
+import { PartialType } from '@nestjs/mapped-types';
 import {
-  IsPositive,
   IsNotEmpty,
   IsNumber,
   IsString,
@@ -11,36 +11,29 @@ import {
   ValidateIf,
   IsDecimal,
   IsOptional,
+  IsNotEmptyObject,
+  IsObject,
+  Validate,
 } from 'class-validator';
 import {
+  IsAutoConclusionValid,
   IsDocumentNumber,
   IsExtensionValid,
-  IsNullForLegalEntity,
+  IsUniqueItem,
+  IsValidPersonConstraint,
 } from '../decorators';
+import { VALID_EXTENSIONS } from '../constants';
+import { AsfiFileDto } from './asfi-file.dto';
 
-const VALID_EXTENSIONS = [
-  'CH',
-  'LP',
-  'CB',
-  'OR',
-  'PO',
-  'TJ',
-  'SC',
-  'BE',
-  'PA',
-  'PE',
-];
-
-export class ItemSolicitudDto {
-  @IsString()
-  @IsOptional()
-  @IsNullForLegalEntity()
+export class ItemRequestDto {
+  @Validate(IsValidPersonConstraint)
   maternalLastName: string;
 
-  @IsString()
-  @IsOptional()
-  @IsNullForLegalEntity()
+  @Validate(IsValidPersonConstraint)
   paternalLastName: string;
+
+  @Validate(IsValidPersonConstraint)
+  firstName: string;
 
   @IsString()
   @IsOptional()
@@ -51,14 +44,12 @@ export class ItemSolicitudDto {
   @IsOptional()
   complement?: string;
 
-  @IsString()
-  @IsOptional()
-  @IsExtensionValid(VALID_EXTENSIONS)
+  @Validate(IsExtensionValid, VALID_EXTENSIONS)
   extension: string;
 
-  @Transform(({ value }) => (value ? String(value) : value))
   @IsString()
-  @IsDocumentNumber(VALID_EXTENSIONS)
+  @Validate(IsDocumentNumber, VALID_EXTENSIONS)
+  @Transform(({ value }) => (value ? String(value) : value))
   documentNumber: string;
 
   @IsIn([1, 2, 3, 4, 5])
@@ -69,54 +60,27 @@ export class ItemSolicitudDto {
   supportDocument: string;
 
   @IsNumber()
-  @IsPositive()
+  @Type(() => Number)
   item: number;
 
   @Transform(({ value }) => {
-    return value !== undefined && value !== null
-      ? parseFloat(value).toFixed(2)
-      : value;
+    return value !== undefined && value !== null ? parseFloat(value).toFixed(2) : value;
   })
   @IsDecimal({
     decimal_digits: '2',
   })
   amount: string;
 
-  @IsString()
-  @IsOptional()
-  @IsNullForLegalEntity()
-  firstName: string;
-
   @ValidateIf((obj) => [1, 3].includes(obj.documentType))
-  @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'La razon social es obligatoria para personas juridicas' })
   businessName: string;
 
   @IsIn([1, 2, 3, 4])
+  @Type(() => Number)
   supportType: string;
 }
 
-export class RemitirSolicitudDto {
-  // TODO Database id
-  @IsString()
-  id: string;
-
-  // TODO File uploaded
-  // attachment: string;
-
-  // quantityDetail: number // * detail length
-
-  // sentDate: string  // * current date;
-
-  // organization: string  // * Enviroments;
-
-  // TODO User auth
-  // user: string;
-
-  @IsString()
-  @IsNotEmpty()
-  attachmentName: string;
-
+export class CreateAsfiRequestDto {
   @IsString()
   @IsNotEmpty()
   authorityPosition: string;
@@ -138,7 +102,17 @@ export class RemitirSolicitudDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ItemSolicitudDto)
+  @Type(() => ItemRequestDto)
   @ArrayMinSize(1)
-  details: ItemSolicitudDto[];
+  @IsUniqueItem('item', { message: 'Cada item debe ser único' })
+  @IsAutoConclusionValid()
+  details: ItemRequestDto[];
+
+  @IsNotEmptyObject()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => AsfiFileDto)
+  file: AsfiFileDto;
 }
+
+export class UpdateAsfiRequestDto extends PartialType(CreateAsfiRequestDto) {}

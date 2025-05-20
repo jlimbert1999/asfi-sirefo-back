@@ -14,7 +14,9 @@ export const SOAP_ACTIONS = {
   CONSULTAR_LISTADO_ESTADOS: `${XML_NAMESPACES.RET}IRetencionFondos/ConsultarListaEstadoEnvio`,
   CONSULTAR_ENTIDAD_VIGENTE: `${XML_NAMESPACES.RET}IRetencionFondos/ConsultaEntidadVigente`,
   REMITIR_SOLICITUD: `${XML_NAMESPACES.RET}IRetencionFondos/RemitirSolicitud`,
-  CONSULTAR_ESTADO_ENVIO: `${XML_NAMESPACES.RET}IRetencionFondos/ConsultarEstadoSolicitud`,
+  CONSULTAR_ESTADO_ENVIO: `${XML_NAMESPACES.RET}IRetencionFondos/ConsultarEstadoEnvio`,
   REMITIR_REMISION_FONDOS: `${XML_NAMESPACES.RET}IRetencionFondos/RemitirRemisionFondos`,
   REMITIR_CONFIRMACION_ENTIDAD: `${XML_NAMESPACES.RET}IRetencionFondos/RemitirConfirmacionEntidad`,
 };
+
+export const VALID_EXTENSIONS = ['CH', 'LP', 'CB', 'OR', 'PO', 'TJ', 'SC', 'BE', 'PA', 'PE'];

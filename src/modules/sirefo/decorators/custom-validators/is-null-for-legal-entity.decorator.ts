@@ -1,9 +1,4 @@
-import {
-  registerDecorator,
-  ValidationArguments,
-  ValidationOptions,
-} from 'class-validator';
-
+import { registerDecorator, ValidationArguments, ValidationOptions } from 'class-validator';
 export function IsNullForLegalEntity(validationOptions?: ValidationOptions) {
   return function (object: any, propertyName: string) {
     registerDecorator({
@@ -14,10 +9,11 @@ export function IsNullForLegalEntity(validationOptions?: ValidationOptions) {
       validator: {
         validate(value: string, args: ValidationArguments) {
           const { documentType } = args.object as any;
-          if (![1, 3].includes(documentType)) {
-            return typeof value === 'string';
+          if ([1, 3].includes(documentType)) return value === null || value === '';
+          if (args.property === 'maternalLastName') {
+            return true;
           }
-          return value === null || value === '';
+          return typeof value === 'string' && (value !== '' || value !== undefined);
         },
         defaultMessage(args: ValidationArguments) {
           const { documentType } = args.object as any;

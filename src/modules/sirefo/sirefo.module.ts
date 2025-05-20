@@ -1,12 +1,35 @@
 import { Module } from '@nestjs/common';
-import { SirefoController } from './controllers/sirefo.controller';
-import { SirefoService, XmlService } from './services';
-import { RequestService } from './services/request.service';
+
 import { FilesModule } from '../files/files.module';
+import { PrismaModule } from '../prisma/prisma.module';
+
+import {
+  AsfiCrendentialsService,
+  AsfiFundTransferService,
+  AsfiRequestService,
+  CryptoService,
+  SirefoService,
+  XmlService,
+} from './services';
+
+import {
+  AsfiCrendentialsController,
+  AsfiFundTransferController,
+  AsfiRequestController,
+  SirefoController,
+} from './controllers';
 
 @Module({
-  controllers: [SirefoController],
-  providers: [SirefoService, XmlService, RequestService],
-  imports: [FilesModule],
+  controllers: [SirefoController, AsfiRequestController, AsfiFundTransferController, AsfiCrendentialsController],
+  providers: [
+    SirefoService,
+    XmlService,
+    AsfiRequestService,
+    AsfiFundTransferService,
+    CryptoService,
+    AsfiCrendentialsService,
+  ],
+  imports: [FilesModule, PrismaModule],
+  exports: [SirefoService, AsfiRequestService],
 })
 export class SirefoModule {}

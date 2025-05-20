@@ -1,19 +1,28 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { PingDto, RemitirSolicitudDto } from '../dtos';
-import { SirefoService } from '../services/sirefo.service';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 
+import { ConsultRequestDto, PingDto, FilterAsfiRequestDto } from '../dtos';
+import { AsfiCredentials, GetAsfiCredentialsRequest } from '../decorators';
+import { AsfiRequestService, SirefoService } from '../services';
+import { IAsfiCredentials } from '../infrastructure';
+
+import { UserRole } from 'src/modules/users/domain';
+import { Role } from 'src/modules/auth/decorators';
+@Role(UserRole.EMPLOYEE)
 @Controller()
 export class SirefoController {
-  constructor(private readonly sirefoService: SirefoService) {}
+  constructor(
+    private sirefoService: SirefoService,
+    private requestService: AsfiRequestService,
+  ) {}
 
   @Post('ping')
   ping(@Body() pingDto: PingDto) {
     return this.sirefoService.ping(pingDto);
   }
 
-  @Post('remitirSolicitud')
-  remitirSolicitud(@Body() body: RemitirSolicitudDto) {
-    return this.sirefoService.remitirSolicitud(body);
+  @Get('requests')
+  findAll(@Query() queryParams: FilterAsfiRequestDto) {
+    return this.requestService.findAll(queryParams);
   }
 
   @Get('consultarEntidadVigente')
@@ -22,28 +31,23 @@ export class SirefoController {
   }
 
   @Get('consultarListaEstadoEnvio')
-  async consultarListaEstadoEnvio() {
-    return await this.sirefoService.consultarListaEstadoEnvio();
+  @AsfiCredentials()
+  consultarListaEstadoEnvio(@GetAsfiCredentialsRequest() credentials: IAsfiCredentials) {
+    return this.sirefoService.consultarListaEstadoEnvio(credentials);
   }
 
-  @Get('consultarEstadoEnvio/:id')
-  consultarEstadoEvio(@Param('id') id: string) {
-    return this.sirefoService.consultarEstadoEvio(id);
+  @Get('consultarEstadoEnvio/:id/:type')
+  @AsfiCredentials()
+  consultarEstadoEvio(
+    @Param() params: ConsultRequestDto,
+    @GetAsfiCredentialsRequest() asfiCredentials: IAsfiCredentials,
+  ) {
+    return this.sirefoService.consultarEstadoEvio(params, asfiCredentials);
   }
 
   @Get('consultarCabecera')
-  consultarCabacera() {
-    return this.sirefoService.consultarCabecera();
-  }
-
-  @Get('remitirRemisionFondos')
-  consultarEstadoEnvio() {
-    return this.sirefoService.remitirRemisionFondos();
-  }
-
-
-  @Get('remitirConfirmacionRequest')
-  remitirConfirmacionRequest() {
-    return this.sirefoService.remitirConfirmacionRequest();
+  @AsfiCredentials()
+  consultarCabacera(@GetAsfiCredentialsRequest() credentials: IAsfiCredentials) {
+    return this.sirefoService.consultarCabecera(credentials);
   }
 }

@@ -1,36 +1,17 @@
-import {
-  registerDecorator,
-  ValidationOptions,
-  ValidationArguments,
-} from 'class-validator';
+import { ValidationArguments, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
 
-export function IsExtensionValid(
-  validExtensions: string[],
-  validationOptions?: ValidationOptions,
-) {
-  return function (object: Object, propertyName: string) {
-    registerDecorator({
-      name: 'isExtensionValid',
-      target: object.constructor,
-      propertyName,
-      options: validationOptions,
-      validator: {
-        validate(value: string, args: ValidationArguments) {
-          const { documentType } = args.object as any;
+@ValidatorConstraint({ name: 'isExtensionValid', async: false })
+export class IsExtensionValid implements ValidatorConstraintInterface {
+  validate(value: string | null | undefined, args: ValidationArguments) {
+    const { documentType } = args.object as any;
+    const validExtensions: string[] = args.constraints;
+    if (!value) return [1, 2, 3, 4].includes(documentType);
+    if (documentType === 5) return value === 'PE';
+    if (value === 'PE') return [2, 5].includes(documentType);
+    return validExtensions.includes(value);
+  }
 
-          // Puede ser vacío si tipoDocumento es 1, 2, 3 o 4
-          if (!value) return [1, 2, 3, 4].includes(documentType);
-
-          // Solo puede ser "PE" si tipoDocumento es 2 o 5
-          if (value === 'PE' && ![2, 5].includes(documentType)) {
-            return false;
-          }
-          return validExtensions.includes(value);
-        },
-        defaultMessage() {
-          return 'Invalid extension for the provided document type.';
-        },
-      },
-    });
-  };
+  defaultMessage(args: ValidationArguments) {
+    return `La extension ${args.value ?? '(Nulo)'} para el tipo de documento ${args.object['documentType']} no es valida`;
+  }
 }

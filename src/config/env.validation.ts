@@ -13,6 +13,12 @@ export class EnvVars {
 
   @IsString()
   HOST: string;
+
+  @IsString()
+  JWT_KEY: string;
+
+  @IsString()
+  ENCRYPTION_KEY: string;
 }
 
 export function validate(config: Record<string, unknown>): EnvVars {

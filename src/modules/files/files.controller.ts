@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  ParseFilePipeBuilder,
-  Post,
-  Res,
-  UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseFilePipeBuilder, Post, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 
@@ -18,7 +9,7 @@ import { CustomUploadFileTypeValidator } from './validators/upload-file-type.val
 export class FilesController {
   constructor(private filesService: FilesService) {}
 
-  @Post('post')
+  @Post('asfi')
   @UseInterceptors(FileInterceptor('file'))
   uploadFileASFI(
     @UploadedFile(
@@ -32,7 +23,7 @@ export class FilesController {
     return this.filesService.saveFile(file);
   }
 
-  @Get('post/:filename')
+  @Get(':filename')
   findBranchVideo(@Res() res: Response, @Param('filename') filename: string) {
     const path = this.filesService.getStaticFilePath(filename);
     res.sendFile(path);
