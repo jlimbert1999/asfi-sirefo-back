@@ -113,6 +113,10 @@ export class CreateAsfiRequestDto {
   @ValidateNested()
   @Type(() => AsfiFileDto)
   file: AsfiFileDto;
+
+  @IsString()
+  @IsNotEmpty()
+  dataSheetFile: string;
 }
 
 export class UpdateAsfiRequestDto extends PartialType(CreateAsfiRequestDto) {}

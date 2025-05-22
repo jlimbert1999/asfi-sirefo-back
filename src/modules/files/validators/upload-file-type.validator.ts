@@ -1,5 +1,5 @@
 import { FileValidator } from '@nestjs/common';
-import { parse } from 'file-type-mime';
+import { getFileType } from 'src/helpers';
 
 export class CustomUploadFileTypeValidator extends FileValidator {
   constructor(protected readonly validExtensions: string[]) {
@@ -7,16 +7,15 @@ export class CustomUploadFileTypeValidator extends FileValidator {
   }
 
   async isValid(file?: Express.Multer.File): Promise<boolean> {
-    const fileTypeProps = parse(file.buffer);
-    if (!fileTypeProps) return false;
-    if (file.mimetype !== fileTypeProps.mime) return false;
-    const extension = fileTypeProps.mime.split('/')[1];
-    return this.validExtensions.includes(extension);
+    if (!file || !file.buffer) return false;
+    const fileType = await getFileType(file.buffer);
+    if (!fileType) return false;
+    if (file.mimetype !== fileType.mime) return false;
+    return this.validExtensions.includes(fileType.ext);
   }
 
   buildErrorMessage(file: Express.Multer.File): string {
-    return `${
-      file.mimetype.split('/')[1]
-    } is not valid. Only files allowed: ${this.validExtensions.join(', ')}`;
+    const current = file?.mimetype?.split('/')[1] ?? 'unknown';
+    return `${current} is not valid. Only files allowed: ${this.validExtensions.join(', ')}`;
   }
 }

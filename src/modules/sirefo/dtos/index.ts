@@ -1,7 +1,6 @@
 export * from "./ping.dto"
 export * from "./asfi-request.dto"
 export * from "./consult-request.dto"
-export * from "./asfi-file.dto"
 export * from "./asfi-fund-transfer.dto"
 export * from "./filter-asfi-request.dto"
 export * from "./asfi-credentials.dto"

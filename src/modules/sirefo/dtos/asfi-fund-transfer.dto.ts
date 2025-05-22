@@ -109,14 +109,18 @@ export class CreateAsfiFundTransferDto {
   @IsUniqueItem('item', { message: 'Cada item debe ser único' })
   details: ItemFundTransferDto[];
 
+  @IsUUID()
+  asfiRequestId: string;
+
   @IsNotEmptyObject()
   @IsObject()
   @ValidateNested()
   @Type(() => AsfiFileDto)
   file: AsfiFileDto;
 
-  @IsUUID()
-  asfiRequestId: string;
+  @IsString()
+  @IsNotEmpty()
+  dataSheetFile: string;
 }
 
 export class UpdateAsfiFundTransferDto extends PartialType(CreateAsfiFundTransferDto) {}

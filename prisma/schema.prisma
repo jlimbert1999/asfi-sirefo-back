@@ -32,6 +32,7 @@ model AsfiRequest {
   fundTransfers       AsfiFundTransfer[]
   user                User?              @relation(fields: [userId], references: [id])
   userId              Int?
+  dataSheetFile String?
 }
 
 model AsfiFundTransfer {
@@ -52,6 +53,7 @@ model AsfiFundTransfer {
   file                AsfiTransferFile?
   user                User?             @relation(fields: [userId], references: [id])
   userId              Int?
+  dataSheetFile String?
 }
 
 model AsfiRequestFile {

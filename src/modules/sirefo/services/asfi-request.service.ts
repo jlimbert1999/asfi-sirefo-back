@@ -24,16 +24,28 @@ export class AsfiRequestService {
     private fileService: FilesService,
   ) {}
 
-  async create(dto: CreateAsfiRequestDto, credentials: IAsfiCredentials) {
+  async create(requestDto: CreateAsfiRequestDto, credentials: IAsfiCredentials) {
     try {
-      await this.checkDuplicateRequestCode(dto.requestCode);
-
+      await this.checkDuplicateRequestCode(requestDto.requestCode);
+      const currentDate = new Date();
+      const { details, file, ...props } = requestDto;
       const createdRequest = await this.prisma.asfiRequest.create({
-        data: this.dtoToRequestModel(dto),
+        data: {
+          ...props,
+          quantityDetail: details.length,
+          sentDate: currentDate,
+          userName: 'luiz.perez',
+          file: {
+            create: {
+              fileName: file.fileName,
+              originalName: file.originalName,
+            },
+          },
+        },
         include: { file: true },
       });
 
-      await this.sendAsfiRequest(createdRequest, dto.details, credentials);
+      // await this.sendAsfiRequest(createdRequest, dto.details, credentials);
 
       const updated = await this.prisma.asfiRequest.update({
         where: { id: createdRequest.id },
@@ -82,14 +94,14 @@ export class AsfiRequestService {
         return updatedRequest;
       });
 
-      await this.sendAsfiRequest(result, details, credentials);
+      // await this.sendAsfiRequest(result, details, credentials);
 
       const updated = await this.prisma.asfiRequest.update({
         where: { id: result.id },
         data: { status: 'completed' },
         include: { file: true },
       });
-      return this.plainAsfiRequest(updated);
+      return this.plainAsfiRequest(result);
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) throw error;
@@ -140,7 +152,7 @@ export class AsfiRequestService {
         ...(term && { requestCode: { contains: term, mode: 'insensitive' } }),
       },
       select: { id: true, circularNumber: true, requestCode: true, quantityDetail: true },
-      take: 5,
+      // take: 5,
     });
     return item;
   }
@@ -148,37 +160,6 @@ export class AsfiRequestService {
   private async checkDuplicateRequestCode(code: string): Promise<void> {
     const duplicate = await this.prisma.asfiRequest.findFirst({ where: { requestCode: code } });
     if (duplicate) throw new BadRequestException(`El codigo ${code} ya ha sido registrado`);
-  }
-
-  private dtoToRequestModel(data: CreateAsfiRequestDto): Prisma.AsfiRequestCreateInput {
-    const currentDate = new Date();
-    return {
-      authorityPosition: data.authorityPosition,
-      requestingAuthority: data.requestingAuthority,
-      requestCode: data.requestCode,
-      department: data.department,
-      processType: data.processType,
-      quantityDetail: data.details.length,
-      sentDate: currentDate,
-      userName: 'luiz.perez',
-      file: {
-        create: {
-          fileName: data.file.fileName,
-          originalName: data.file.originalName,
-        },
-      },
-    };
-  }
-
-  private plainAsfiRequest(request: AsfiRequestWithFile) {
-    const { file, ...props } = request;
-    return {
-      ...props,
-      file: {
-        originalName: file.originalName,
-        fileName: this.fileService.buildFileUrl(file.fileName),
-      },
-    };
   }
 
   private async sendAsfiRequest(
@@ -191,5 +172,17 @@ export class AsfiRequestService {
     if (response.Respuesta !== 0) {
       throw new ConflictException({ message: response.Detalle, request: this.plainAsfiRequest(request) });
     }
+  }
+
+  private plainAsfiRequest(request: AsfiRequestWithFile) {
+    const { file, dataSheetFile, ...props } = request;
+    return {
+      ...props,
+      dataSheetFile: this.fileService.buildFileUrl(dataSheetFile),
+      file: {
+        originalName: file.originalName,
+        fileName: this.fileService.buildFileUrl(file.fileName),
+      },
+    };
   }
 }

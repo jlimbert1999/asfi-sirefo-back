@@ -28,35 +28,50 @@ export class AsfiFundTransferService {
     private fileService: FilesService,
   ) {}
 
-  async create(data: CreateAsfiFundTransferDto) {
+  async create(requestDto: CreateAsfiFundTransferDto) {
+    console.log(requestDto);
     try {
-      await this.checkTransferCodes(data.details);
+      // await this.checkTransferCodes(data.details);
 
-      await this.checkDuplicateRequestCode(data.requestCode);
+      await this.checkDuplicateRequestCode(requestDto.requestCode);
 
-      const asfiRequest = await this.getValidatedAsfiRequest(data.asfiRequestId);
+      const { asfiRequestId, details, ...dtoProps } = requestDto;
+
+      const asfiRequest = await this.getValidatedAsfiRequest(asfiRequestId);
+
+      const currentDate = new Date();
 
       const createdRequest = await this.prisma.asfiFundTransfer.create({
-        data: this.mapToFundTransferInput(data, asfiRequest),
+        data: {
+          ...dtoProps,
+          quantityDetail: details.length,
+          sentDate: currentDate,
+          userName: 'luiz.perez',
+          asfiRequest: {
+            connect: {
+              id: asfiRequest.id,
+            },
+          },
+          file: {
+            create: {
+              fileName: dtoProps.file.fileName,
+              originalName: dtoProps.file.originalName,
+            },
+          },
+        },
         include: { file: true, asfiRequest: true },
       });
 
-      const response = await this.sirefoService.remitirRemisionFondos(createdRequest, data.details);
+      // await this.sendAsfiRequest(createdRequest, data.details);
 
-      if (response.Respuesta !== 0) {
-        throw new ConflictException({
-          message: response.Detalle,
-          request: this.plainAsfiFundRequest(createdRequest),
-        });
-      }
-
-      const updated = await this.prisma.asfiFundTransfer.update({
-        where: { id: createdRequest.id },
-        data: { status: 'completed' },
-        include: { file: true, asfiRequest: true },
-      });
-      return this.plainAsfiFundRequest(updated);
+      // const updated = await this.prisma.asfiFundTransfer.update({
+      //   where: { id: createdRequest.id },
+      //   data: { status: 'completed' },
+      //   include: { file: true, asfiRequest: true },
+      // });
+      return this.plainAsfiFundRequest(createdRequest);
     } catch (error) {
+      console.log(error);
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException();
     }
@@ -187,33 +202,6 @@ export class AsfiFundTransferService {
     return asfiRequest;
   }
 
-  private mapToFundTransferInput(
-    data: CreateAsfiFundTransferDto,
-    request: AsfiRequest,
-  ): Prisma.AsfiFundTransferCreateInput {
-    const currentDate = new Date();
-    return {
-      authorityPosition: data.authorityPosition,
-      requestingAuthority: data.requestingAuthority,
-      requestCode: data.requestCode,
-      department: data.department,
-      quantityDetail: data.details.length,
-      sentDate: currentDate,
-      userName: 'luiz.perez',
-      asfiRequest: {
-        connect: {
-          id: request.id,
-        },
-      },
-      file: {
-        create: {
-          fileName: data.file.fileName,
-          originalName: data.file.originalName,
-        },
-      },
-    };
-  }
-
   private async sendAsfiRequest(request: AsfiFundTransferWithFile, details: ItemFundTransferDto[]) {
     const response = await this.sirefoService.remitirRemisionFondos(request, details);
 
@@ -223,9 +211,10 @@ export class AsfiFundTransferService {
   }
 
   private plainAsfiFundRequest(request: AsfiFundTransferWithFile) {
-    const { file, ...props } = request;
+    const { file, dataSheetFile, ...props } = request;
     return {
       ...props,
+      dataSheetFile: this.fileService.buildFileUrl(dataSheetFile),
       file: {
         originalName: file.originalName,
         fileName: this.fileService.buildFileUrl(file.fileName),

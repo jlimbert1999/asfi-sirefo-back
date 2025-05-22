@@ -76,6 +76,7 @@ export class SirefoService {
       const parsed = this.parseXMLResponse(response.data);
       return parsed;
     } catch (error) {
+      console.log(error);
       if (error instanceof AxiosError && error.code === 'ERR_BAD_RESPONSE') {
         const data = this.parseXMLResponse(error.response?.data);
         if (data['Envelope']['Body']['Fault']['faultcode'] === 's:Client') {

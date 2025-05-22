@@ -14,8 +14,8 @@ export class FilesController {
   uploadFileASFI(
     @UploadedFile(
       new ParseFilePipeBuilder()
-        .addValidator(new CustomUploadFileTypeValidator(['pdf']))
-        .addMaxSizeValidator({ maxSize: 5 * 1000000 })
+        .addValidator(new CustomUploadFileTypeValidator(['pdf', 'xlsx', 'ods']))
+        .addMaxSizeValidator({ maxSize: 20 * 1000000 })
         .build(),
     )
     file: Express.Multer.File,

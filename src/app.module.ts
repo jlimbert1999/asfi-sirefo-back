@@ -11,6 +11,8 @@ import { AuthModule } from './modules/auth/auth.module';
 
 import { AppService } from './app.service';
 import { validate } from './config';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 @Module({
   imports: [
     ScheduleModule.forRoot(),
@@ -21,6 +23,9 @@ import { validate } from './config';
     UsersModule,
     SchedulerModule,
     AuthModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+    }),
   ],
   controllers: [],
   providers: [AppService],
