@@ -9,7 +9,7 @@ export class CreateUserDto {
 
   @IsNotEmpty()
   @IsString()
-  position:string
+  position: string;
 
   @IsString()
   @IsNotEmpty()
@@ -20,7 +20,8 @@ export class CreateUserDto {
   password: string;
 
   @IsEnum(UserRole, { each: true })
-  roles: UserRole[];
+  @IsOptional()
+  roles?: UserRole[];
 
   @IsBoolean()
   @IsOptional()

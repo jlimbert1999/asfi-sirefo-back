@@ -7,7 +7,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 
-import { Prisma } from 'generated/prisma';
+import { Prisma, User } from 'generated/prisma';
 
 import { SirefoService } from './sirefo.service';
 import { CreateAsfiRequestDto, FilterAsfiRequestDto, ItemRequestDto, UpdateAsfiRequestDto } from '../dtos';
@@ -24,7 +24,7 @@ export class AsfiRequestService {
     private fileService: FilesService,
   ) {}
 
-  async create(requestDto: CreateAsfiRequestDto, credentials: IAsfiCredentials) {
+  async create(requestDto: CreateAsfiRequestDto, user: User, credentials: IAsfiCredentials) {
     try {
       await this.checkDuplicateRequestCode(requestDto.requestCode);
       const currentDate = new Date();
@@ -32,6 +32,11 @@ export class AsfiRequestService {
       const createdRequest = await this.prisma.asfiRequest.create({
         data: {
           ...props,
+          user: {
+            connect: {
+              id: user.id,
+            },
+          },
           quantityDetail: details.length,
           sentDate: currentDate,
           userName: 'luiz.perez',

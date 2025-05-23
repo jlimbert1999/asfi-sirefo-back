@@ -30,9 +30,12 @@ model AsfiRequest {
   file                AsfiRequestFile?
   status              RequestStatus      @default(pending)
   fundTransfers       AsfiFundTransfer[]
-  user                User?              @relation(fields: [userId], references: [id])
-  userId              Int?
-  dataSheetFile String?
+  user                User               @relation(fields: [userId], references: [id])
+  userId              Int
+  dataSheetFile       String?
+  sendErrorMessage    String?
+  processingStatus    String?
+  circularDate        DateTime?
 }
 
 model AsfiFundTransfer {
@@ -51,9 +54,12 @@ model AsfiFundTransfer {
   asfiRequest         AsfiRequest       @relation(fields: [asfiRequestId], references: [id])
   status              RequestStatus     @default(pending)
   file                AsfiTransferFile?
-  user                User?             @relation(fields: [userId], references: [id])
-  userId              Int?
-  dataSheetFile String?
+  user                User              @relation(fields: [userId], references: [id])
+  userId              Int
+  dataSheetFile       String?
+  sendErrorMessage    String?
+  processingStatus    String?
+  circularDate        DateTime?
 }
 
 model AsfiRequestFile {
@@ -82,7 +88,7 @@ model User {
   active             Boolean            @default(true)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  roles              String[]           @default([])
+  roles              String[]           @default(["employee"])
   mustChangePassword Boolean            @default(false)
   asfiFundTransfer   AsfiFundTransfer[]
   asfiRequest        AsfiRequest[]

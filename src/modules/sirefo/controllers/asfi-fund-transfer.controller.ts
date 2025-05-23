@@ -1,10 +1,12 @@
 import { Body, Controller, Post, Get, Query, Patch, Param } from '@nestjs/common';
 
-import { AsfiFundTransferService } from '../services';
-import { CreateAsfiFundTransferDto, FilterAsfiRequestDto, UpdateAsfiFundTransferDto } from '../dtos';
-import { Role } from 'src/modules/auth/decorators';
+import { GetUserRequest, Role } from 'src/modules/auth/decorators';
 import { UserRole } from 'src/modules/users/domain';
+
+import { CreateAsfiFundTransferDto, FilterAsfiRequestDto, UpdateAsfiFundTransferDto } from '../dtos';
+import { AsfiFundTransferService } from '../services';
 import { AsfiCredentials } from '../decorators';
+import { User } from 'generated/prisma';
 
 @Role(UserRole.EMPLOYEE)
 @AsfiCredentials()
@@ -13,8 +15,8 @@ export class AsfiFundTransferController {
   constructor(private requestService: AsfiFundTransferService) {}
 
   @Post()
-  create(@Body() body: CreateAsfiFundTransferDto) {
-    return this.requestService.create(body);
+  create(@Body() body: CreateAsfiFundTransferDto, @GetUserRequest() user: User) {
+    return this.requestService.create(body, user);
   }
 
   @Get()

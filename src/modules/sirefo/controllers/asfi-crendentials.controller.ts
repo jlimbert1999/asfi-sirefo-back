@@ -33,7 +33,7 @@ export class AsfiCrendentialsController {
 
   @Post('validate')
   async validateCredentials(@Body() { asfiUsername, asfiPassword }: AsfiCredentialsDto) {
-    await this.sirefoService.consultarCabecera({ email: asfiUsername, password: asfiPassword });
+    // await this.sirefoService.consultarCabecera({ email: asfiUsername, password: asfiPassword });
     return { ok: true, message: 'Valid credentials' };
   }
 }

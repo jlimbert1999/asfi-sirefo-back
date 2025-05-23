@@ -1,25 +1,29 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { UserRole } from 'src/modules/users/domain';
-import { Role } from 'src/modules/auth/decorators';
+import { GetUserRequest, Role } from 'src/modules/auth/decorators';
 
 import { CreateAsfiRequestDto, FilterAsfiRequestDto, UpdateAsfiRequestDto } from '../dtos';
 import { AsfiCredentials, GetAsfiCredentialsRequest } from '../decorators';
 import { IAsfiCredentials } from '../infrastructure';
 import { AsfiRequestService } from '../services';
+import { User } from 'generated/prisma';
 
 @Role(UserRole.EMPLOYEE)
+@AsfiCredentials()
 @Controller('asfi-request')
 export class AsfiRequestController {
   constructor(private requestService: AsfiRequestService) {}
 
   @Post()
-  @AsfiCredentials()
-  create(@Body() body: CreateAsfiRequestDto, @GetAsfiCredentialsRequest() credentials: IAsfiCredentials) {
-    return this.requestService.create(body, credentials);
+  create(
+    @Body() body: CreateAsfiRequestDto,
+    @GetUserRequest() user: User,
+    @GetAsfiCredentialsRequest() credentials: IAsfiCredentials,
+  ) {
+    return this.requestService.create(body, user, credentials);
   }
 
   @Patch(':id')
-  @AsfiCredentials()
   update(
     @Param('id') id: string,
     @Body() body: UpdateAsfiRequestDto,

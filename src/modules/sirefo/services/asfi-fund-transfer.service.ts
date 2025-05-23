@@ -6,7 +6,7 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { AsfiRequest, Prisma } from 'generated/prisma';
+import { AsfiRequest, Prisma, User } from 'generated/prisma';
 
 import { AsfiFundTransferWithFile } from 'src/modules/prisma/types';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
@@ -28,7 +28,7 @@ export class AsfiFundTransferService {
     private fileService: FilesService,
   ) {}
 
-  async create(requestDto: CreateAsfiFundTransferDto) {
+  async create(requestDto: CreateAsfiFundTransferDto, user: User) {
     console.log(requestDto);
     try {
       // await this.checkTransferCodes(data.details);
@@ -44,6 +44,11 @@ export class AsfiFundTransferService {
       const createdRequest = await this.prisma.asfiFundTransfer.create({
         data: {
           ...dtoProps,
+          user: {
+            connect: {
+              id: user.id,
+            },
+          },
           quantityDetail: details.length,
           sentDate: currentDate,
           userName: 'luiz.perez',
