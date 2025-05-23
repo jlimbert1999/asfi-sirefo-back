@@ -33,9 +33,9 @@ export class AsfiFundTransferService {
     try {
       // await this.checkTransferCodes(data.details);
 
-      await this.checkDuplicateRequestCode(requestDto.requestCode);
-
-      const { asfiRequestId, details, ...dtoProps } = requestDto;
+      const { asfiRequestId, requestCode, details, ...dtoProps } = requestDto;
+      const citeCode = this.buildCiteCode(requestCode);
+      await this.checkDuplicateRequestCode(citeCode);
 
       const asfiRequest = await this.getValidatedAsfiRequest(asfiRequestId);
 
@@ -49,6 +49,7 @@ export class AsfiFundTransferService {
               id: user.id,
             },
           },
+          requestCode: citeCode,
           quantityDetail: details.length,
           sentDate: currentDate,
           userName: 'luiz.perez',
@@ -82,8 +83,9 @@ export class AsfiFundTransferService {
     }
   }
 
-  async update(id: string, { file, details, asfiRequestId, ...dtoProps }: UpdateAsfiFundTransferDto) {
+  async update(id: string, requestDto: UpdateAsfiFundTransferDto) {
     try {
+      const { file, details, requestCode, asfiRequestId, ...dtoProps } = requestDto;
       await this.checkTransferCodes(details);
 
       const requestDB = await this.prisma.asfiFundTransfer.findUnique({ where: { id }, include: { file: true } });
@@ -93,8 +95,10 @@ export class AsfiFundTransferService {
         throw new BadRequestException(`Request must be pending status for update`);
       }
 
-      if (dtoProps.requestCode && dtoProps.requestCode !== requestDB.requestCode) {
-        await this.checkDuplicateRequestCode(dtoProps.requestCode);
+      const citeCode = requestCode ? this.buildCiteCode(requestCode) : null;
+
+      if (citeCode && citeCode !== requestDB.requestCode) {
+        await this.checkDuplicateRequestCode(citeCode);
       }
 
       const updateAsfiRequestQuery =
@@ -118,7 +122,12 @@ export class AsfiFundTransferService {
         const updatedRequest = await tx.asfiFundTransfer.update({
           where: { id },
           include: { file: true, asfiRequest: true },
-          data: { ...dtoProps, ...createFileQuery, ...updateAsfiRequestQuery },
+          data: {
+            ...dtoProps,
+            ...createFileQuery,
+            ...updateAsfiRequestQuery,
+            ...(citeCode && { requestCode: citeCode }),
+          },
         });
         return updatedRequest;
       });
@@ -225,5 +234,10 @@ export class AsfiFundTransferService {
         fileName: this.fileService.buildFileUrl(file.fileName),
       },
     };
+  }
+
+  private buildCiteCode(requestCode: number) {
+    const year = new Date().getFullYear();
+    return `CE/SF-DRT-72/${requestCode}/${year}`;
   }
 }

@@ -7,7 +7,7 @@ import { readFile } from 'fs/promises';
 
 import { AsfiFundTransferWithFile, AsfiRequestWithFile } from 'src/modules/prisma/types';
 import { FilesService } from 'src/modules/files/files.service';
-import { formatToAnsi } from 'src/helpers';
+import { AnsiDateUtil } from 'src/helpers';
 
 import { ASFI_INSTITUTION_CONFIG, XML_NAMESPACES } from '../constants';
 import { ItemRequestDto, ItemFundTransferDto, AsfiCredentialsDto } from '../dtos';
@@ -129,7 +129,7 @@ export class XmlService {
 
     const hashImagen = this.generateSHA1(fileBase64);
 
-    const ansiDate = formatToAnsi(item.sentDate);
+    const ansiDate = AnsiDateUtil.formatToAnsi(item.sentDate);
 
     const headerContent = [
       item.file.originalName,
@@ -294,7 +294,7 @@ export class XmlService {
 
     const hashImagen = this.generateSHA1(fileBase64);
 
-    const ansiDate = formatToAnsi(item.sentDate);
+    const ansiDate = AnsiDateUtil.formatToAnsi(item.sentDate);
 
     const headerContent = [
       item.asfiRequest.circularNumber,

@@ -26,9 +26,10 @@ export class AsfiRequestService {
 
   async create(requestDto: CreateAsfiRequestDto, user: User, credentials: IAsfiCredentials) {
     try {
-      await this.checkDuplicateRequestCode(requestDto.requestCode);
+      const { details, file, requestCode, ...props } = requestDto;
+      const citeCode = this.buildCiteCode(requestCode);
+      await this.checkDuplicateRequestCode(citeCode);
       const currentDate = new Date();
-      const { details, file, ...props } = requestDto;
       const createdRequest = await this.prisma.asfiRequest.create({
         data: {
           ...props,
@@ -37,6 +38,7 @@ export class AsfiRequestService {
               id: user.id,
             },
           },
+          requestCode: citeCode,
           quantityDetail: details.length,
           sentDate: currentDate,
           userName: 'luiz.perez',
@@ -65,17 +67,19 @@ export class AsfiRequestService {
     }
   }
 
-  async update(id: string, { file, details, ...dtoProps }: UpdateAsfiRequestDto, credentials: IAsfiCredentials) {
+  async update(id: string, requestDto: UpdateAsfiRequestDto, credentials: IAsfiCredentials) {
     try {
+      const { file, details, requestCode, ...dtoProps } = requestDto;
       const requesDB = await this.prisma.asfiRequest.findUnique({ where: { id }, include: { file: true } });
       if (!requesDB) throw new NotFoundException(`Request ${id} not found`);
 
       if (requesDB.status !== 'pending') {
         throw new BadRequestException(`Request must be pending status for update`);
       }
+      const citeCode = requestCode ? this.buildCiteCode(requestCode) : null;
 
-      if (dtoProps.requestCode && dtoProps.requestCode !== requesDB.requestCode) {
-        await this.checkDuplicateRequestCode(dtoProps.requestCode);
+      if (citeCode && citeCode !== requesDB.requestCode) {
+        await this.checkDuplicateRequestCode(citeCode);
       }
 
       const result = await this.prisma.$transaction(async (tx) => {
@@ -94,7 +98,7 @@ export class AsfiRequestService {
         const updatedRequest = await tx.asfiRequest.update({
           where: { id },
           include: { file: true },
-          data: { ...dtoProps, ...createFileQuery },
+          data: { ...dtoProps, ...createFileQuery, ...(citeCode && { requestCode: citeCode }) },
         });
         return updatedRequest;
       });
@@ -154,12 +158,22 @@ export class AsfiRequestService {
         status: 'completed',
         circularNumber: { not: null },
         processType: 'R',
-        ...(term && { requestCode: { contains: term, mode: 'insensitive' } }),
+        ...(term && {
+          OR: [
+            { requestCode: { contains: term, mode: 'insensitive' } },
+            { circularNumber: { contains: term, mode: 'insensitive' } },
+          ],
+        }),
       },
       select: { id: true, circularNumber: true, requestCode: true, quantityDetail: true },
-      // take: 5,
+      take: 5,
     });
     return item;
+  }
+
+  private buildCiteCode(requestCode: number) {
+    const year = new Date().getFullYear();
+    return `CE/SF-DRT-72/${requestCode}/${year}`;
   }
 
   private async checkDuplicateRequestCode(code: string): Promise<void> {

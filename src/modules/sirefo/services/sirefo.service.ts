@@ -18,9 +18,7 @@ import {
 import { ASFI_INSTITUTION_CONFIG, SOAP_ACTIONS, XML_NAMESPACES } from '../constants';
 import * as fs from 'fs';
 import * as path from 'path';
-import { formatToAnsi } from 'src/helpers';
 import { XmlService } from './xml.service';
-import { Prisma } from 'generated/prisma';
 import { AsfiFundTransferWithFile, AsfiRequestWithFile } from 'src/modules/prisma/types';
 import {
   consultarEstadoEnvioResponse,

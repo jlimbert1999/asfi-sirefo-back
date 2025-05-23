@@ -3,6 +3,7 @@ import {
   IsArray,
   IsDecimal,
   IsIn,
+  IsInt,
   IsNotEmpty,
   IsNotEmptyObject,
   IsNumber,
@@ -10,6 +11,8 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Max,
+  Min,
   Validate,
   ValidateIf,
   ValidateNested,
@@ -94,9 +97,10 @@ export class CreateAsfiFundTransferDto {
   @IsNotEmpty()
   requestingAuthority: string;
 
-  @IsString()
-  @IsNotEmpty()
-  requestCode: string;
+  @IsInt({ message: 'El código correlativo debe ser un número entero' })
+  @Min(1, { message: 'El número no puede ser cero' })
+  @Max(99999, { message: 'El número no debe exceder 9999' })
+  requestCode: number;
 
   @IsString()
   @IsNotEmpty()

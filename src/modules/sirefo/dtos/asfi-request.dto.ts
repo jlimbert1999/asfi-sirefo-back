@@ -14,6 +14,9 @@ import {
   IsNotEmptyObject,
   IsObject,
   Validate,
+  IsInt,
+  Min,
+  Max,
 } from 'class-validator';
 import {
   IsAutoConclusionValid,
@@ -89,9 +92,10 @@ export class CreateAsfiRequestDto {
   @IsNotEmpty()
   requestingAuthority: string;
 
-  @IsString()
-  @IsNotEmpty()
-  requestCode: string;
+  @IsInt({ message: 'El código correlativo debe ser un número entero' })
+  @Min(1, { message: 'El número no puede ser cero' })
+  @Max(9999, { message: 'El número no debe exceder 9999' })
+  requestCode: number;
 
   @IsString()
   @IsNotEmpty()
