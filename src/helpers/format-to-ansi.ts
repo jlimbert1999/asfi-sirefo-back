@@ -1,5 +1,6 @@
 export class AnsiDateUtil {
-  static parseFromAnsi(dateStr: string): Date {
+  static parseFromAnsi(dateAnsi: string | number): Date {
+    const dateStr = dateAnsi.toString();
     const year = Number(dateStr.slice(0, 4));
     const month = Number(dateStr.slice(4, 6)) - 1; // JS months: 0-based
     const day = Number(dateStr.slice(6, 8));

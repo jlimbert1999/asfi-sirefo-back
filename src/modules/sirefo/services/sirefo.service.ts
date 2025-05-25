@@ -1,39 +1,25 @@
-import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { XMLBuilder } from 'xmlbuilder2/lib/interfaces';
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { XMLParser } from 'fast-xml-parser';
-import { create } from 'xmlbuilder2';
-import { createHash } from 'crypto';
 
-import {
-  ConsultRequestDto,
-  ItemRequestDto,
-  PingDto,
-  CreateAsfiRequestDto,
-  ItemFundTransferDto,
-  AsfiCredentialsDto,
-} from '../dtos';
-import { ASFI_INSTITUTION_CONFIG, SOAP_ACTIONS, XML_NAMESPACES } from '../constants';
-import * as fs from 'fs';
-import * as path from 'path';
+import { ConsultRequestDto, ItemRequestDto, PingDto, ItemFundTransferDto } from '../dtos';
+import { SOAP_ACTIONS } from '../constants';
+
 import { XmlService } from './xml.service';
 import { AsfiFundTransferWithFile, AsfiRequestWithFile } from 'src/modules/prisma/types';
 import {
   consultarEstadoEnvioResponse,
-  IAsfiCredentials,
   listaEntidadVigenteResponse,
   remitirRemisionFondosResponse,
   remitirSolicitudResponse,
+  IAsfiCredentials,
 } from '../infrastructure';
-// import { AsfiRequest } from 'src/modules/prisma/types/request.types';
 
 @Injectable()
 export class SirefoService {
   private readonly ASFI_URL = this.configService.get('ASFI_ENDPOINT');
-  private readonly ASFI_USER = this.configService.get('ASFI_USER');
-  private readonly ASFI_PASSWORD = this.configService.get('ASFI_PASSWORD');
 
   constructor(
     private xmlService: XmlService,
@@ -85,27 +71,8 @@ export class SirefoService {
     }
   }
 
-  async consultarEntidadVigente() {
-    const builder = create({ version: '1.0', encoding: 'UTF-8' });
-
-    const xml = builder
-      .ele('soapenv:Envelope', {
-        'xmlns:soapenv': XML_NAMESPACES.SOAPENV,
-        'xmlns:ret': XML_NAMESPACES.RET,
-        'xmlns:urn': XML_NAMESPACES.URN,
-      })
-      .ele('soapenv:Header')
-      .up()
-      .ele('soapenv:Body')
-      .ele('ret:ConsultaEntidadVigenteRequest')
-      .ele('ret:Identidad')
-      .ele('urn:Usuario')
-      .txt(this.ASFI_USER)
-      .up()
-      .ele('urn:Clave')
-      .txt(this.ASFI_PASSWORD)
-      .end({ prettyPrint: true });
-
+  async consultarEntidadVigente(credentials: IAsfiCredentials) {
+    const xml = this.xmlService.generateXmlForConsultarEntidadVigente(credentials);
     const config: AxiosRequestConfig = {
       headers: {
         'Content-Type': 'text/xml; charset=utf-8',
@@ -176,47 +143,6 @@ export class SirefoService {
     } catch (error) {
       console.error('❌ Error en consultarListaEstadoEnvio:', error);
       throw new InternalServerErrorException('Error al consultar lista de estado de envío');
-    }
-  }
-
-  async consultarCabeceras() {
-    try {
-      const builder = create({ version: '1.0', encoding: 'UTF-8' });
-      const xml = builder
-        .ele('soapenv:Envelope', {
-          'xmlns:soapenv': XML_NAMESPACES.SOAPENV,
-          'xmlns:ret': XML_NAMESPACES.RET,
-          'xmlns:urn': XML_NAMESPACES.URN,
-        })
-        .ele('soapenv:Header')
-        .up()
-        .ele('soapenv:Body')
-        .ele('ret:ConsultaCabeceraRequest')
-        .ele('ret:Identidad')
-        .ele('urn:Usuario')
-        .txt(this.ASFI_USER)
-        .up()
-        .ele('urn:Clave')
-        .txt(this.ASFI_PASSWORD)
-        .end({ prettyPrint: true });
-
-      const config: AxiosRequestConfig = {
-        method: 'POST',
-        url: this.ASFI_URL,
-        headers: {
-          'Content-Type': 'text/xml; charset=utf-8',
-          SOAPAction: SOAP_ACTIONS.CONSULTAR_CABECERA,
-        },
-        data: xml,
-      };
-
-      const response = await axios(config);
-      const parsed = this.parseXMLResponse(response.data);
-      console.log(parsed);
-      return parsed;
-    } catch (error) {
-      console.error('❌ Error en consultarCabeceras:', error);
-      throw new InternalServerErrorException('Error al consultar cabeceras');
     }
   }
 

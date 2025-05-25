@@ -14,7 +14,7 @@ export function IsAutoConclusionValid(validationOptions?: ValidationOptions) {
           return value.every((item: any) => !!item['autoConclusion']);
         },
         defaultMessage() {
-          return `La auto conclusion es obligatoria para  una solicitud de SUSPENSION`;
+          return `La auto conclusion es obligatoria para una solicitud de SUSPENSION`;
         },
       },
     });

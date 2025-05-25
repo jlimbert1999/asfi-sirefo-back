@@ -9,7 +9,6 @@ import { FilesModule } from './modules/files/files.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 
-import { AppService } from './app.service';
 import { validate } from './config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -28,6 +27,6 @@ import { join } from 'path';
     }),
   ],
   controllers: [],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}

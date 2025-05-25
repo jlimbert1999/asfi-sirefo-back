@@ -47,30 +47,35 @@ export class ItemFundTransferDto {
   @Transform(({ value }) => (value ? String(value) : value))
   documentNumber: string;
 
-  @IsIn([1, 2, 3, 4, 5])
+  @IsIn([1, 2, 3, 4, 5], { message: 'El tipo de documento debe ser: 1, 2, 3, 4 o 5' })
   @Type(() => Number)
   documentType: number;
 
   @IsString()
+  @Transform(({ value }) => value?.toString())
   supportDocument: string;
 
-  @IsNumber()
+  @IsNumber({}, { message: 'El numero de item debe ser un entero' })
   @Type(() => Number)
   item: number;
 
   @Transform(({ value }) => {
-    return value !== undefined && value !== null ? parseFloat(value).toFixed(2) : value;
+    const num = parseFloat(value);
+    return isNaN(num) ? value : num.toFixed(2);
   })
-  @IsDecimal({
-    decimal_digits: '2',
-  })
+  @IsDecimal(
+    {
+      decimal_digits: '2',
+    },
+    { message: 'El monto debe ser un numero con máximo 2 decimales' },
+  )
   amount: string;
 
   @ValidateIf((obj) => [1, 3].includes(obj.documentType))
   @IsNotEmpty({ message: 'La razon social es obligatoria para personas juridicas' })
   businessName: string;
 
-  @IsIn([1, 2, 3, 4])
+  @IsIn([1, 2, 3, 4], { message: 'El tipo de respaldo deber ser 1, 2, 3 o 4' })
   @Type(() => Number)
   supportType: string;
 
@@ -89,14 +94,15 @@ export class ItemFundTransferDto {
 }
 
 export class CreateAsfiFundTransferDto {
-  @IsString()
+  @IsString({ message: 'El cargo de la autoridad solicitante debe ser un texto' })
   @IsNotEmpty()
   authorityPosition: string;
 
-  @IsString()
+  @IsString({ message: 'El nombre de la autoridad solicitante debe ser un texto' })
   @IsNotEmpty()
   requestingAuthority: string;
 
+  @Type(() => Number)
   @IsInt({ message: 'El código correlativo debe ser un número entero' })
   @Min(1, { message: 'El número no puede ser cero' })
   @Max(99999, { message: 'El número no debe exceder 9999' })

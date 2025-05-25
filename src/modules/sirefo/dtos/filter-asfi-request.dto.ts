@@ -1,6 +1,8 @@
-import { Transform, Type } from 'class-transformer';
-import { IsOptional, IsIn, IsBoolean, IsDate } from 'class-validator';
+import { IsOptional, IsIn, IsDate, IsEnum } from 'class-validator';
+import { Type } from 'class-transformer';
+
 import { PaginationDto } from 'src/modules/common';
+import { AsfiRequestStatus } from 'generated/prisma';
 
 export class FilterAsfiRequestDto extends PaginationDto {
   @IsOptional()
@@ -12,16 +14,7 @@ export class FilterAsfiRequestDto extends PaginationDto {
   @IsOptional()
   processType?: 'R' | 'S';
 
-  @IsIn(['pending', 'completed'])
+  @IsEnum(AsfiRequestStatus)
   @IsOptional()
-  status: 'pending' | 'completed';
-
-  @IsOptional()
-  @IsBoolean()
-  @Transform(({ value }) => {
-    if (value === 'true') return true;  
-    if (value === 'false') return false;
-    return value;
-  })
-  isAproved?: boolean;
+  status?: AsfiRequestStatus;
 }

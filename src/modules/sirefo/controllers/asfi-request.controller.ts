@@ -33,12 +33,12 @@ export class AsfiRequestController {
   }
 
   @Get()
-  findAll(@Query() queryParams: FilterAsfiRequestDto) {
-    return this.requestService.findAll(queryParams);
+  findAll(@Query() queryParams: FilterAsfiRequestDto, @GetUserRequest() user: User) {
+    return this.requestService.findAll(queryParams, user);
   }
 
   @Get('aproved')
-  serchAprovedCodes(@Query('term') term: string) {
+  serchAprovedCodes(@Query('term') term?: string) {
     return this.requestService.searchAprovedCodes(term);
   }
 }

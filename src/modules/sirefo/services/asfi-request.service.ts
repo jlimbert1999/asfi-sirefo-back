@@ -7,7 +7,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 
-import { Prisma, User } from 'generated/prisma';
+import { AsfiRequestStatus, Prisma, User } from 'generated/prisma';
 
 import { SirefoService } from './sirefo.service';
 import { CreateAsfiRequestDto, FilterAsfiRequestDto, ItemRequestDto, UpdateAsfiRequestDto } from '../dtos';
@@ -56,7 +56,7 @@ export class AsfiRequestService {
 
       const updated = await this.prisma.asfiRequest.update({
         where: { id: createdRequest.id },
-        data: { status: 'completed' },
+        data: { status: 'sent' },
         include: { file: true },
       });
       return this.plainAsfiRequest(updated);
@@ -69,11 +69,12 @@ export class AsfiRequestService {
 
   async update(id: string, requestDto: UpdateAsfiRequestDto, credentials: IAsfiCredentials) {
     try {
+      console.log(requestDto.details);
       const { file, details, requestCode, ...dtoProps } = requestDto;
       const requesDB = await this.prisma.asfiRequest.findUnique({ where: { id }, include: { file: true } });
       if (!requesDB) throw new NotFoundException(`Request ${id} not found`);
 
-      if (requesDB.status !== 'pending') {
+      if (requesDB.status !== 'draft' && requesDB.status !== 'rejected') {
         throw new BadRequestException(`Request must be pending status for update`);
       }
       const citeCode = requestCode ? this.buildCiteCode(requestCode) : null;
@@ -105,11 +106,11 @@ export class AsfiRequestService {
 
       // await this.sendAsfiRequest(result, details, credentials);
 
-      const updated = await this.prisma.asfiRequest.update({
-        where: { id: result.id },
-        data: { status: 'completed' },
-        include: { file: true },
-      });
+      // const updated = await this.prisma.asfiRequest.update({
+      //   where: { id: result.id },
+      //   data: { status: 'completed' },
+      //   include: { file: true },
+      // });
       return this.plainAsfiRequest(result);
     } catch (error) {
       console.log(error);
@@ -118,8 +119,9 @@ export class AsfiRequestService {
     }
   }
 
-  async findAll({ limit, offset, term, createdAt, processType, status, isAproved }: FilterAsfiRequestDto) {
+  async findAll({ limit, offset, term, createdAt, processType, status }: FilterAsfiRequestDto, user: User) {
     const where: Prisma.AsfiRequestWhereInput = {
+      userId: user.id,
       ...(term && {
         requestCode: {
           contains: term,
@@ -134,7 +136,6 @@ export class AsfiRequestService {
       }),
       ...(processType && { processType }),
       ...(status && { status }),
-      ...(typeof isAproved === 'boolean' && { circularNumber: isAproved ? { not: null } : null }),
     };
     const [requests, length] = await Promise.all([
       this.prisma.asfiRequest.findMany({
@@ -155,8 +156,8 @@ export class AsfiRequestService {
   async searchAprovedCodes(term?: string) {
     const item = await this.prisma.asfiRequest.findMany({
       where: {
-        status: 'completed',
-        circularNumber: { not: null },
+        status: 'accepted',
+        // circularNumber: { not: null },
         processType: 'R',
         ...(term && {
           OR: [

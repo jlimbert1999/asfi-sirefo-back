@@ -19,6 +19,7 @@ import {
   ItemFundTransferDto,
   UpdateAsfiFundTransferDto,
 } from '../dtos';
+import { IAsfiCredentials } from '../infrastructure';
 
 @Injectable()
 export class AsfiFundTransferService {
@@ -86,12 +87,12 @@ export class AsfiFundTransferService {
   async update(id: string, requestDto: UpdateAsfiFundTransferDto) {
     try {
       const { file, details, requestCode, asfiRequestId, ...dtoProps } = requestDto;
-      await this.checkTransferCodes(details);
+      // await this.checkTransferCodes(details);
 
       const requestDB = await this.prisma.asfiFundTransfer.findUnique({ where: { id }, include: { file: true } });
       if (!requestDB) throw new NotFoundException(`Request ${id} not found`);
 
-      if (requestDB.status !== 'pending') {
+      if (requestDB.status !== 'draft' && requestDB.status !== 'rejected') {
         throw new BadRequestException(`Request must be pending status for update`);
       }
 
@@ -132,14 +133,14 @@ export class AsfiFundTransferService {
         return updatedRequest;
       });
 
-      await this.sendAsfiRequest(result, details);
+      // await this.sendAsfiRequest(result, details);
 
-      const updatedRequest = await this.prisma.asfiFundTransfer.update({
-        where: { id: result.id },
-        data: { status: 'completed' },
-        include: { file: true, asfiRequest: true },
-      });
-      return this.plainAsfiFundRequest(updatedRequest);
+      // const updatedRequest = await this.prisma.asfiFundTransfer.update({
+      //   where: { id: result.id },
+      //   data: { status: 'completed' },
+      //   include: { file: true, asfiRequest: true },
+      // });
+      return this.plainAsfiFundRequest(result);
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) throw error;
@@ -147,8 +148,9 @@ export class AsfiFundTransferService {
     }
   }
 
-  async findAll({ limit, offset, term, createdAt, processType, status, isAproved }: FilterAsfiRequestDto) {
+  async findAll({ limit, offset, term, createdAt, processType, status }: FilterAsfiRequestDto, user: User) {
     const where: Prisma.AsfiFundTransferWhereInput = {
+      userId: user.id,
       ...(term && {
         requestCode: {
           contains: term,
@@ -163,7 +165,6 @@ export class AsfiFundTransferService {
       }),
       ...(processType && { processType }),
       ...(status && { status }),
-      ...(typeof isAproved === 'boolean' && { circularNumber: isAproved ? { not: null } : null }),
     };
 
     const [requests, length] = await Promise.all([
@@ -185,8 +186,8 @@ export class AsfiFundTransferService {
     };
   }
 
-  private async checkTransferCodes(items: ItemFundTransferDto[]) {
-    const entities = await this.sirefoService.consultarEntidadVigente();
+  private async checkTransferCodes(items: ItemFundTransferDto[], credentials: IAsfiCredentials) {
+    const entities = await this.sirefoService.consultarEntidadVigente(credentials);
     const validCodes = new Set(entities.map((e) => e.CodigoEnvio));
 
     const invaliCodes = items

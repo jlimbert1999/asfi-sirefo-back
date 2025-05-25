@@ -1,33 +1,27 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 
-import { ConsultRequestDto, PingDto, FilterAsfiRequestDto } from '../dtos';
+import { ConsultRequestDto, PingDto } from '../dtos';
 import { AsfiCredentials, GetAsfiCredentialsRequest } from '../decorators';
-import { AsfiRequestService, SirefoService } from '../services';
+import { SirefoService } from '../services';
 import { IAsfiCredentials } from '../infrastructure';
 
 import { UserRole } from 'src/modules/users/domain';
 import { Role } from 'src/modules/auth/decorators';
+
 @Role(UserRole.EMPLOYEE)
-@Controller()
+@Controller('sirefo')
 export class SirefoController {
-  constructor(
-    private sirefoService: SirefoService,
-    private requestService: AsfiRequestService,
-  ) {}
+  constructor(private sirefoService: SirefoService) {}
 
   @Post('ping')
   ping(@Body() pingDto: PingDto) {
     return this.sirefoService.ping(pingDto);
   }
 
-  @Get('requests')
-  findAll(@Query() queryParams: FilterAsfiRequestDto) {
-    return this.requestService.findAll(queryParams);
-  }
-
   @Get('consultarEntidadVigente')
-  async consultarEntidadVigente() {
-    return await this.sirefoService.consultarEntidadVigente();
+  @AsfiCredentials()
+  consultarEntidadVigente(@GetAsfiCredentialsRequest() credentials: IAsfiCredentials) {
+    return this.sirefoService.consultarCabecera(credentials);
   }
 
   @Get('consultarListaEstadoEnvio')

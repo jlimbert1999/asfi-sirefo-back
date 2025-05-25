@@ -23,18 +23,18 @@ export const FRONTEND_MENU: Menu[] = [
   {
     label: 'Documentacion',
     items: [
-      {
-        icon: 'pi pi-list-check',
-        role: UserRole.EMPLOYEE,
-        label: 'Metodos',
-        routerLink: 'home/methods',
-      },
       // {
-      //   icon: 'pi pi-building',
+      //   icon: 'pi pi-list-check',
       //   role: UserRole.EMPLOYEE,
-      //   label: 'Entidades vigentes',
-      //   routerLink: 'home/entities',
+      //   label: 'Metodos',
+      //   routerLink: 'home/methods',
       // },
+      {
+        icon: 'pi pi-building',
+        role: UserRole.EMPLOYEE,
+        label: 'Entidades vigentes',
+        routerLink: 'home/entities',
+      },
     ],
   },
   {

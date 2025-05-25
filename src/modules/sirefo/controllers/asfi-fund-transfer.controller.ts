@@ -20,8 +20,8 @@ export class AsfiFundTransferController {
   }
 
   @Get()
-  findAll(@Query() queryParams: FilterAsfiRequestDto) {
-    return this.requestService.findAll(queryParams);
+  findAll(@Query() queryParams: FilterAsfiRequestDto, @GetUserRequest() user: User) {
+    return this.requestService.findAll(queryParams, user);
   }
 
   @Patch(':id')

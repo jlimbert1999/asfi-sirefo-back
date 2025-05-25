@@ -28,7 +28,7 @@ model AsfiRequest {
   circularNumber      String?
   processType         ProcessType
   file                AsfiRequestFile?
-  status              RequestStatus      @default(pending)
+  status              AsfiRequestStatus      @default(draft)
   fundTransfers       AsfiFundTransfer[]
   user                User               @relation(fields: [userId], references: [id])
   userId              Int
@@ -52,7 +52,7 @@ model AsfiFundTransfer {
   circularNumber      String?
   asfiRequestId       String
   asfiRequest         AsfiRequest       @relation(fields: [asfiRequestId], references: [id])
-  status              RequestStatus     @default(pending)
+  status              AsfiRequestStatus     @default(draft)
   file                AsfiTransferFile?
   user                User              @relation(fields: [userId], references: [id])
   userId              Int
@@ -108,7 +108,9 @@ enum ProcessType {
   S
 }
 
-enum RequestStatus {
-  pending
-  completed
+enum AsfiRequestStatus {
+  draft
+  sent
+  rejected
+  accepted
 }

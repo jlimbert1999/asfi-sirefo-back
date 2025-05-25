@@ -118,6 +118,26 @@ export class XmlService {
       .end({ prettyPrint: true });
   }
 
+  generateXmlForConsultarEntidadVigente({ email, password }: IAsfiCredentials) {
+    return create({ version: '1.0', encoding: 'UTF-8' })
+      .ele('soapenv:Envelope', {
+        'xmlns:soapenv': XML_NAMESPACES.SOAPENV,
+        'xmlns:ret': XML_NAMESPACES.RET,
+        'xmlns:urn': XML_NAMESPACES.URN,
+      })
+      .ele('soapenv:Header')
+      .up()
+      .ele('soapenv:Body')
+      .ele('ret:ConsultaEntidadVigenteRequest')
+      .ele('ret:Identidad')
+      .ele('urn:Usuario')
+      .txt(email)
+      .up()
+      .ele('urn:Clave')
+      .txt(password)
+      .end({ prettyPrint: true });
+  }
+
   async generateXmlRemitirSolicitud(
     item: AsfiRequestWithFile,
     details: ItemRequestDto[],

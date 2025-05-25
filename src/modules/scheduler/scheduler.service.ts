@@ -1,41 +1,68 @@
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
-import { SirefoService } from '../sirefo/services';
+import { CryptoService, SirefoService } from '../sirefo/services';
 import { PrismaService } from '../prisma/prisma.service';
-import { ConfigService } from '@nestjs/config';
-import { EnvVars } from 'src/config';
-
+import { AsfiRequest } from 'generated/prisma';
+import { AnsiDateUtil } from 'src/helpers';
 @Injectable()
 export class SchedulerService {
   constructor(
     private sirefoService: SirefoService,
+    private cryptoService: CryptoService,
     private prisma: PrismaService,
-    private configService: ConfigService<EnvVars>,
   ) {}
 
   @Cron('30 11,15 * * *')
   // @Cron('*/30 * * * * *')
   async syncCircularNumbersFromASFI() {
-    const pendingRequests = await this.getPendingApprovalRequests();
+    const pendingRequests = await this.prisma.asfiRequest.findMany({ where: { status: 'sent' } });
+    const credentialsMap = await this.getUsersCredentialsMap(pendingRequests);
+
     for (const request of pendingRequests) {
+      const { asfiPassword, asfiUsername, passwordIv } = credentialsMap.get(request.userId);
+      const decryptedPassword = this.cryptoService.decrypt(asfiPassword, passwordIv);
+
       const stateRequest = await this.sirefoService.consultarEstadoEvio(
         {
           id: request.requestId,
           type: request.processType === 'R' ? 1 : 2,
         },
-        { email: this.configService.get('ASFI_USER'), password: this.configService.get('ASFI_PASSWORD') },
+        { email: asfiUsername, password: decryptedPassword },
       );
-      if (stateRequest.Circular) {
-        await this.prisma.asfiRequest.update({
-          where: { id: request.id },
-          data: { circularNumber: stateRequest.Circular },
-        });
+      let newStatus = request.status;
+      switch (stateRequest.Estado) {
+        case 'Procesado':
+          newStatus = 'accepted';
+          break;
+
+        case 'Con error':
+          newStatus = 'rejected';
+          break;
+
+        default:
+          break;
       }
+      await this.prisma.asfiRequest.update({
+        where: { id: request.id },
+        data: {
+          status: newStatus,
+          circularNumber: stateRequest.Circular,
+          sendErrorMessage: stateRequest.ErrorEnvio,
+          processingStatus: stateRequest.Estado,
+          circularDate: AnsiDateUtil.parseFromAnsi(stateRequest.FechaCircular),
+        },
+      });
     }
   }
 
-  private async getPendingApprovalRequests() {
-    return await this.prisma.asfiRequest.findMany({ where: {} });
+  async getUsersCredentialsMap(request: AsfiRequest[]) {
+    const uniqueUserIds = [...new Set(request.map((item) => item.userId))];
+    const credentialsList = await this.prisma.asfiCredentials.findMany({
+      where: {
+        userId: { in: uniqueUserIds },
+      },
+    });
+    return new Map(credentialsList.map((cred) => [cred.userId, cred]));
   }
 }

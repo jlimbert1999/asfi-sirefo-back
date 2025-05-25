@@ -30,6 +30,6 @@ import {
     AsfiCrendentialsService,
   ],
   imports: [FilesModule, PrismaModule],
-  exports: [SirefoService, AsfiRequestService],
+  exports: [SirefoService, AsfiRequestService, CryptoService],
 })
 export class SirefoModule {}
