@@ -15,7 +15,7 @@ export class SchedulerService {
 
   @Cron('30 11,15 * * *')
   // @Cron('*/30 * * * * *')
-  async syncCircularNumbersFromASFI() {
+  async syncAsfiRequests() {
     const pendingRequests = await this.prisma.asfiRequest.findMany({ where: { status: 'sent' } });
     const credentialsMap = await this.getUsersCredentialsMap(pendingRequests);
 
@@ -56,7 +56,49 @@ export class SchedulerService {
     }
   }
 
-  async getUsersCredentialsMap(request: AsfiRequest[]) {
+  @Cron('35 11,15 * * *')
+  async syncFundTransfers() {
+    const pendingRequests = await this.prisma.asfiFundTransfer.findMany({ where: { status: 'sent' } });
+    const credentialsMap = await this.getUsersCredentialsMap(pendingRequests);
+
+    for (const request of pendingRequests) {
+      const { asfiPassword, asfiUsername, passwordIv } = credentialsMap.get(request.userId);
+      const decryptedPassword = this.cryptoService.decrypt(asfiPassword, passwordIv);
+
+      const stateRequest = await this.sirefoService.consultarEstadoEvio(
+        {
+          id: request.requestId,
+          type: 4,
+        },
+        { email: asfiUsername, password: decryptedPassword },
+      );
+      let newStatus = request.status;
+      switch (stateRequest.Estado) {
+        case 'Procesado':
+          newStatus = 'accepted';
+          break;
+
+        case 'Con error':
+          newStatus = 'rejected';
+          break;
+
+        default:
+          break;
+      }
+      await this.prisma.asfiFundTransfer.update({
+        where: { id: request.id },
+        data: {
+          status: newStatus,
+          circularNumber: stateRequest.Circular,
+          sendErrorMessage: stateRequest.ErrorEnvio,
+          processingStatus: stateRequest.Estado,
+          circularDate: AnsiDateUtil.parseFromAnsi(stateRequest.FechaCircular),
+        },
+      });
+    }
+  }
+
+  async getUsersCredentialsMap(request: { userId: number }[]) {
     const uniqueUserIds = [...new Set(request.map((item) => item.userId))];
     const credentialsList = await this.prisma.asfiCredentials.findMany({
       where: {
