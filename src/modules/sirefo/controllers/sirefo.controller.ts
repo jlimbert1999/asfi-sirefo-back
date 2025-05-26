@@ -21,7 +21,7 @@ export class SirefoController {
   @Get('consultarEntidadVigente')
   @AsfiCredentials()
   consultarEntidadVigente(@GetAsfiCredentialsRequest() credentials: IAsfiCredentials) {
-    return this.sirefoService.consultarCabecera(credentials);
+    return this.sirefoService.consultarEntidadVigente(credentials);
   }
 
   @Get('consultarListaEstadoEnvio')
