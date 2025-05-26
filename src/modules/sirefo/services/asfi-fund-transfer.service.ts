@@ -15,9 +15,9 @@ import { FilesService } from 'src/modules/files/files.service';
 import { SirefoService } from './sirefo.service';
 import {
   CreateAsfiFundTransferDto,
+  UpdateAsfiFundTransferDto,
   FilterAsfiRequestDto,
   ItemFundTransferDto,
-  UpdateAsfiFundTransferDto,
 } from '../dtos';
 import { IAsfiCredentials } from '../infrastructure';
 
@@ -29,10 +29,9 @@ export class AsfiFundTransferService {
     private fileService: FilesService,
   ) {}
 
-  async create(requestDto: CreateAsfiFundTransferDto, user: User) {
-    console.log(requestDto);
+  async create(requestDto: CreateAsfiFundTransferDto, user: User, credentials: IAsfiCredentials) {
     try {
-      // await this.checkTransferCodes(data.details);
+      await this.checkTransferCodes(requestDto.details, credentials);
 
       const { asfiRequestId, requestCode, details, ...dtoProps } = requestDto;
       const citeCode = this.buildCiteCode(requestCode);
@@ -69,14 +68,14 @@ export class AsfiFundTransferService {
         include: { file: true, asfiRequest: true },
       });
 
-      // await this.sendAsfiRequest(createdRequest, data.details);
+      await this.sendAsfiRequest(createdRequest, requestDto.details);
 
-      // const updated = await this.prisma.asfiFundTransfer.update({
-      //   where: { id: createdRequest.id },
-      //   data: { status: 'completed' },
-      //   include: { file: true, asfiRequest: true },
-      // });
-      return this.plainAsfiFundRequest(createdRequest);
+      const updated = await this.prisma.asfiFundTransfer.update({
+        where: { id: createdRequest.id },
+        data: { status: 'sent' },
+        include: { file: true, asfiRequest: true },
+      });
+      return this.plainAsfiFundRequest(updated);
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) throw error;
@@ -84,10 +83,10 @@ export class AsfiFundTransferService {
     }
   }
 
-  async update(id: string, requestDto: UpdateAsfiFundTransferDto) {
+  async update(id: string, requestDto: UpdateAsfiFundTransferDto, credentials: IAsfiCredentials) {
     try {
       const { file, details, requestCode, asfiRequestId, ...dtoProps } = requestDto;
-      // await this.checkTransferCodes(details);
+      await this.checkTransferCodes(details, credentials);
 
       const requestDB = await this.prisma.asfiFundTransfer.findUnique({ where: { id }, include: { file: true } });
       if (!requestDB) throw new NotFoundException(`Request ${id} not found`);
@@ -133,14 +132,14 @@ export class AsfiFundTransferService {
         return updatedRequest;
       });
 
-      // await this.sendAsfiRequest(result, details);
+      await this.sendAsfiRequest(result, details);
 
-      // const updatedRequest = await this.prisma.asfiFundTransfer.update({
-      //   where: { id: result.id },
-      //   data: { status: 'completed' },
-      //   include: { file: true, asfiRequest: true },
-      // });
-      return this.plainAsfiFundRequest(result);
+      const updatedRequest = await this.prisma.asfiFundTransfer.update({
+        where: { id: result.id },
+        data: { status: 'sent' },
+        include: { file: true, asfiRequest: true },
+      });
+      return this.plainAsfiFundRequest(updatedRequest);
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) throw error;

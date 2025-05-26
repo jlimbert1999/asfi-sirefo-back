@@ -5,8 +5,9 @@ import { UserRole } from 'src/modules/users/domain';
 
 import { CreateAsfiFundTransferDto, FilterAsfiRequestDto, UpdateAsfiFundTransferDto } from '../dtos';
 import { AsfiFundTransferService } from '../services';
-import { AsfiCredentials } from '../decorators';
+import { AsfiCredentials, GetAsfiCredentialsRequest } from '../decorators';
 import { User } from 'generated/prisma';
+import { IAsfiCredentials } from '../infrastructure';
 
 @Role(UserRole.EMPLOYEE)
 @AsfiCredentials()
@@ -15,8 +16,12 @@ export class AsfiFundTransferController {
   constructor(private requestService: AsfiFundTransferService) {}
 
   @Post()
-  create(@Body() body: CreateAsfiFundTransferDto, @GetUserRequest() user: User) {
-    return this.requestService.create(body, user);
+  create(
+    @Body() body: CreateAsfiFundTransferDto,
+    @GetUserRequest() user: User,
+    @GetAsfiCredentialsRequest() credentials: IAsfiCredentials,
+  ) {
+    return this.requestService.create(body, user, credentials);
   }
 
   @Get()
@@ -25,7 +30,11 @@ export class AsfiFundTransferController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: UpdateAsfiFundTransferDto) {
-    return this.requestService.update(id, body);
+  update(
+    @Param('id') id: string,
+    @Body() body: UpdateAsfiFundTransferDto,
+    @GetAsfiCredentialsRequest() credentials: IAsfiCredentials,
+  ) {
+    return this.requestService.update(id, body, credentials);
   }
 }

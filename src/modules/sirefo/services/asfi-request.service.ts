@@ -52,7 +52,7 @@ export class AsfiRequestService {
         include: { file: true },
       });
 
-      // await this.sendAsfiRequest(createdRequest, dto.details, credentials);
+      await this.sendAsfiRequest(createdRequest, requestDto.details, credentials);
 
       const updated = await this.prisma.asfiRequest.update({
         where: { id: createdRequest.id },
@@ -69,7 +69,6 @@ export class AsfiRequestService {
 
   async update(id: string, requestDto: UpdateAsfiRequestDto, credentials: IAsfiCredentials) {
     try {
-      console.log(requestDto.details);
       const { file, details, requestCode, ...dtoProps } = requestDto;
       const requesDB = await this.prisma.asfiRequest.findUnique({ where: { id }, include: { file: true } });
       if (!requesDB) throw new NotFoundException(`Request ${id} not found`);
@@ -104,14 +103,14 @@ export class AsfiRequestService {
         return updatedRequest;
       });
 
-      // await this.sendAsfiRequest(result, details, credentials);
+      await this.sendAsfiRequest(result, details, credentials);
 
-      // const updated = await this.prisma.asfiRequest.update({
-      //   where: { id: result.id },
-      //   data: { status: 'completed' },
-      //   include: { file: true },
-      // });
-      return this.plainAsfiRequest(result);
+      const updated = await this.prisma.asfiRequest.update({
+        where: { id: result.id },
+        data: { status: 'sent' },
+        include: { file: true },
+      });
+      return this.plainAsfiRequest(updated);
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) throw error;
