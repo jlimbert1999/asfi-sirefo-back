@@ -10,6 +10,9 @@
 #prisma
 /generated
 
+#front build
+/public
+
 # Logs
 logs
 *.log
