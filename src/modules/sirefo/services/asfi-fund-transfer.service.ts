@@ -31,10 +31,12 @@ export class AsfiFundTransferService {
 
   async create(requestDto: CreateAsfiFundTransferDto, user: User, credentials: IAsfiCredentials) {
     try {
-      await this.checkTransferCodes(requestDto.details, credentials);
+      // await this.checkTransferCodes(requestDto.details, credentials);
 
       const { asfiRequestId, requestCode, details, ...dtoProps } = requestDto;
+
       const citeCode = this.buildCiteCode(requestCode);
+
       await this.checkDuplicateRequestCode(citeCode);
 
       const asfiRequest = await this.getValidatedAsfiRequest(asfiRequestId);
@@ -68,14 +70,8 @@ export class AsfiFundTransferService {
         include: { file: true, asfiRequest: true },
       });
 
-      await this.sendAsfiRequest(createdRequest, requestDto.details);
-
-      const updated = await this.prisma.asfiFundTransfer.update({
-        where: { id: createdRequest.id },
-        data: { status: 'sent' },
-        include: { file: true, asfiRequest: true },
-      });
-      return this.plainAsfiFundRequest(updated);
+      // const result = await this.sendAsfiRequest(createdRequest, requestDto.details);
+      return this.plainAsfiFundRequest(createdRequest);
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) throw error;
@@ -86,7 +82,7 @@ export class AsfiFundTransferService {
   async update(id: string, requestDto: UpdateAsfiFundTransferDto, credentials: IAsfiCredentials) {
     try {
       const { file, details, requestCode, asfiRequestId, ...dtoProps } = requestDto;
-      await this.checkTransferCodes(details, credentials);
+      // await this.checkTransferCodes(details, credentials);
 
       const requestDB = await this.prisma.asfiFundTransfer.findUnique({ where: { id }, include: { file: true } });
       if (!requestDB) throw new NotFoundException(`Request ${id} not found`);
@@ -106,7 +102,7 @@ export class AsfiFundTransferService {
           ? { asfiRequest: { connect: { id: (await this.getValidatedAsfiRequest(asfiRequestId)).id } } }
           : {};
 
-      const result = await this.prisma.$transaction(async (tx) => {
+      const updatedRequest = await this.prisma.$transaction(async (tx) => {
         let createFileQuery: Prisma.AsfiFundTransferUpdateInput = {};
         if (file && requestDB.file.fileName !== file.fileName) {
           await tx.asfiTransferFile.deleteMany({ where: { asfiFundTransferId: id } });
@@ -131,14 +127,7 @@ export class AsfiFundTransferService {
         });
         return updatedRequest;
       });
-
-      await this.sendAsfiRequest(result, details);
-
-      const updatedRequest = await this.prisma.asfiFundTransfer.update({
-        where: { id: result.id },
-        data: { status: 'sent' },
-        include: { file: true, asfiRequest: true },
-      });
+      // const result = await this.sendAsfiRequest(updatedRequest, details, credentials);
       return this.plainAsfiFundRequest(updatedRequest);
     } catch (error) {
       console.log(error);
@@ -216,12 +205,21 @@ export class AsfiFundTransferService {
     return asfiRequest;
   }
 
-  private async sendAsfiRequest(request: AsfiFundTransferWithFile, details: ItemFundTransferDto[]) {
-    const response = await this.sirefoService.remitirRemisionFondos(request, details);
+  private async sendAsfiRequest(
+    request: AsfiFundTransferWithFile,
+    details: ItemFundTransferDto[],
+    credentials: IAsfiCredentials,
+  ) {
+    const response = await this.sirefoService.remitirRemisionFondos(request, details, credentials);
 
     if (response.Respuesta !== 0) {
       throw new ConflictException({ message: response.Detalle, request: this.plainAsfiFundRequest(request) });
     }
+    return await this.prisma.asfiFundTransfer.update({
+      where: { id: request.id },
+      data: { status: 'sent' },
+      include: { file: true, asfiRequest: true },
+    });
   }
 
   private plainAsfiFundRequest(request: AsfiFundTransferWithFile) {

@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { XMLParser } from 'fast-xml-parser';
 
-import { ConsultRequestDto, ItemRequestDto, PingDto, ItemFundTransferDto } from '../dtos';
+import { ConsultRequestDto, ItemRequestDto, PingDto, ItemFundTransferDto, FilterAsfiRequestList } from '../dtos';
 import { SOAP_ACTIONS } from '../constants';
 
 import { XmlService } from './xml.service';
@@ -60,7 +60,6 @@ export class SirefoService {
       const parsed = this.parseXMLResponse(response.data);
       return parsed;
     } catch (error) {
-      console.log(error);
       if (error instanceof AxiosError && error.code === 'ERR_BAD_RESPONSE') {
         const data = this.parseXMLResponse(error.response?.data);
         if (data['Envelope']['Body']['Fault']['faultcode'] === 's:Client') {
@@ -108,8 +107,12 @@ export class SirefoService {
     return parsed.Envelope.Body.EstadoEnvio;
   }
 
-  async remitirRemisionFondos(item: AsfiFundTransferWithFile, details: ItemFundTransferDto[]) {
-    const xml = await this.xmlService.generateXmlRemitirRemisionFondos(item, details);
+  async remitirRemisionFondos(
+    item: AsfiFundTransferWithFile,
+    details: ItemFundTransferDto[],
+    credentials: IAsfiCredentials,
+  ) {
+    const xml = await this.xmlService.generateXmlRemitirRemisionFondos(item, details, credentials);
     const config: AxiosRequestConfig = {
       method: 'POST',
       url: this.ASFI_URL,
@@ -124,9 +127,9 @@ export class SirefoService {
     return parsed.Envelope.Body.EstadoEnvio;
   }
 
-  async consultarListaEstadoEnvio(credentials: IAsfiCredentials) {
+  async consultarListaEstadoEnvio(credentials: IAsfiCredentials, { date }: FilterAsfiRequestList) {
     try {
-      const xml = this.xmlService.generateXmlConsultarListaEstadoEnvio(credentials);
+      const xml = this.xmlService.generateXmlConsultarListaEstadoEnvio(credentials, date);
       const config: AxiosRequestConfig = {
         method: 'POST',
         url: this.ASFI_URL,

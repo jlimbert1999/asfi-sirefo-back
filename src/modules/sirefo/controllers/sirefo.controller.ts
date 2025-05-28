@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 
-import { ConsultRequestDto, PingDto } from '../dtos';
+import { ConsultRequestDto, FilterAsfiRequestList, PingDto } from '../dtos';
 import { AsfiCredentials, GetAsfiCredentialsRequest } from '../decorators';
 import { SirefoService } from '../services';
 import { IAsfiCredentials } from '../infrastructure';
@@ -26,8 +26,11 @@ export class SirefoController {
 
   @Get('consultarListaEstadoEnvio')
   @AsfiCredentials()
-  consultarListaEstadoEnvio(@GetAsfiCredentialsRequest() credentials: IAsfiCredentials) {
-    return this.sirefoService.consultarListaEstadoEnvio(credentials);
+  consultarListaEstadoEnvio(
+    @GetAsfiCredentialsRequest() credentials: IAsfiCredentials,
+    @Query() queryParams: FilterAsfiRequestList,
+  ) {
+    return this.sirefoService.consultarListaEstadoEnvio(credentials, queryParams);
   }
 
   @Get('consultarEstadoEnvio/:id/:type')

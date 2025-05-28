@@ -7,7 +7,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 
-import { AsfiRequestStatus, Prisma, User } from 'generated/prisma';
+import { Prisma, User } from 'generated/prisma';
 
 import { SirefoService } from './sirefo.service';
 import { CreateAsfiRequestDto, FilterAsfiRequestDto, ItemRequestDto, UpdateAsfiRequestDto } from '../dtos';
@@ -52,14 +52,8 @@ export class AsfiRequestService {
         include: { file: true },
       });
 
-      await this.sendAsfiRequest(createdRequest, requestDto.details, credentials);
-
-      const updated = await this.prisma.asfiRequest.update({
-        where: { id: createdRequest.id },
-        data: { status: 'sent' },
-        include: { file: true },
-      });
-      return this.plainAsfiRequest(updated);
+      const result = await this.sendAsfiRequest(createdRequest, requestDto.details, credentials);
+      return this.plainAsfiRequest(result);
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) throw error;
@@ -76,13 +70,14 @@ export class AsfiRequestService {
       if (requesDB.status !== 'draft' && requesDB.status !== 'rejected') {
         throw new BadRequestException(`Request must be pending status for update`);
       }
+
       const citeCode = requestCode ? this.buildCiteCode(requestCode) : null;
 
       if (citeCode && citeCode !== requesDB.requestCode) {
         await this.checkDuplicateRequestCode(citeCode);
       }
 
-      const result = await this.prisma.$transaction(async (tx) => {
+      const updatedRequest = await this.prisma.$transaction(async (tx) => {
         let createFileQuery: Prisma.AsfiRequestUpdateInput = {};
         if (file && requesDB.file.fileName !== file.fileName) {
           createFileQuery = {
@@ -103,14 +98,9 @@ export class AsfiRequestService {
         return updatedRequest;
       });
 
-      await this.sendAsfiRequest(result, details, credentials);
+      const result = await this.sendAsfiRequest(updatedRequest, details, credentials);
 
-      const updated = await this.prisma.asfiRequest.update({
-        where: { id: result.id },
-        data: { status: 'sent' },
-        include: { file: true },
-      });
-      return this.plainAsfiRequest(updated);
+      return this.plainAsfiRequest(result);
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) throw error;
@@ -191,6 +181,12 @@ export class AsfiRequestService {
     if (response.Respuesta !== 0) {
       throw new ConflictException({ message: response.Detalle, request: this.plainAsfiRequest(request) });
     }
+    const updated = await this.prisma.asfiRequest.update({
+      where: { id: request.id },
+      data: { status: 'sent' },
+      include: { file: true },
+    });
+    return updated;
   }
 
   private plainAsfiRequest(request: AsfiRequestWithFile) {

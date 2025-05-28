@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsIn, IsNumber } from 'class-validator';
+import { IsDate, IsIn, IsNumber, IsOptional } from 'class-validator';
 
 export class ConsultRequestDto {
   @IsNumber()
@@ -9,4 +9,11 @@ export class ConsultRequestDto {
   @IsIn([1, 2, 4])
   @Type(() => Number)
   type: 1 | 2 | 4;
+}
+
+export class FilterAsfiRequestList {
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  date?: Date;
 }

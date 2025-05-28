@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { IsString, validateSync } from 'class-validator';
+import { IsNumber, IsString, validateSync } from 'class-validator';
 
 export class EnvVars {
   @IsString()
@@ -19,6 +19,9 @@ export class EnvVars {
 
   @IsString()
   ENCRYPTION_KEY: string;
+
+  @IsNumber()
+  PORT: number;
 }
 
 export function validate(config: Record<string, unknown>): EnvVars {

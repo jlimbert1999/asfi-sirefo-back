@@ -14,9 +14,6 @@ import { ItemRequestDto, ItemFundTransferDto, AsfiCredentialsDto } from '../dtos
 import { IAsfiCredentials } from '../infrastructure';
 @Injectable()
 export class XmlService {
-  private readonly ASFI_USER = this.configService.get('ASFI_USER');
-  private readonly ASFI_PASSWORD = this.configService.get('ASFI_PASSWORD');
-
   constructor(
     private configService: ConfigService,
     private fileService: FilesService,
@@ -80,10 +77,10 @@ export class XmlService {
       .up()
       .ele('ret:Identidad')
       .ele('urn:Usuario')
-      .txt(this.ASFI_USER)
+      .txt(credentials.email)
       .up()
       .ele('urn:Clave')
-      .txt(this.ASFI_PASSWORD)
+      .txt(credentials.password)
       .up()
       .up()
       .ele('ret:Tipo')
@@ -91,7 +88,10 @@ export class XmlService {
       .end({ prettyPrint: true });
   }
 
-  generateXmlConsultarListaEstadoEnvio(credentials: IAsfiCredentials) {
+  generateXmlConsultarListaEstadoEnvio(credentials: IAsfiCredentials, date?: Date) {
+    const filterDate = date ?? new Date();
+    filterDate.setHours(0, 0, 0, 0);
+    const ansiDate = AnsiDateUtil.formatToAnsi(filterDate);
     const { email, password } = credentials;
     return create({ version: '1.0', encoding: 'UTF-8' })
       .ele('soapenv:Envelope', {
@@ -107,7 +107,7 @@ export class XmlService {
       .txt(ASFI_INSTITUTION_CONFIG.CODE)
       .up()
       .ele('ret:FechaEnvio')
-      .txt('20250112000000')
+      .txt(ansiDate)
       .up()
       .ele('ret:Identidad')
       .ele('urn:Usuario')
@@ -307,7 +307,11 @@ export class XmlService {
     return builder.end({ prettyPrint: true });
   }
 
-  async generateXmlRemitirRemisionFondos(item: AsfiFundTransferWithFile, details: ItemFundTransferDto[]) {
+  async generateXmlRemitirRemisionFondos(
+    item: AsfiFundTransferWithFile,
+    details: ItemFundTransferDto[],
+    credentials: IAsfiCredentials,
+  ) {
     const entity = ASFI_INSTITUTION_CONFIG.CODE;
 
     const fileBase64 = await this.getFileBase64(item.file.fileName);
@@ -384,7 +388,7 @@ export class XmlService {
       .txt(entity)
       .up()
       .ele('lym:Usuario')
-      .txt('luis.perez')
+      .txt(credentials.email)
       .up()
       .up();
 
@@ -473,7 +477,13 @@ export class XmlService {
         .up()
         .up();
     }
-    xmlRoot.ele('ret:Identidad').ele('urn:Usuario').txt(this.ASFI_USER).up().ele('urn:Clave').txt(this.ASFI_PASSWORD);
+    xmlRoot
+      .ele('ret:Identidad')
+      .ele('urn:Usuario')
+      .txt(credentials.email)
+      .up()
+      .ele('urn:Clave')
+      .txt(credentials.password);
     return xmlRoot.end({ prettyPrint: true });
   }
 
