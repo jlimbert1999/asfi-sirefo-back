@@ -55,7 +55,7 @@ export class AsfiRequestService {
       const result = await this.sendAsfiRequest(createdRequest, requestDto.details, credentials);
       return this.plainAsfiRequest(result);
     } catch (error) {
-      console.log(error);
+      console.log('Error creacion asfi request', error);
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException();
     }
@@ -102,7 +102,7 @@ export class AsfiRequestService {
 
       return this.plainAsfiRequest(result);
     } catch (error) {
-      console.log(error);
+      console.log('Error actualizacion asfi request', error);
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException();
     }
@@ -146,7 +146,7 @@ export class AsfiRequestService {
     const item = await this.prisma.asfiRequest.findMany({
       where: {
         status: 'accepted',
-        // circularNumber: { not: null },
+        circularNumber: { not: null },
         processType: 'R',
         ...(term && {
           OR: [

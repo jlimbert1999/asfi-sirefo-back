@@ -31,7 +31,7 @@ export class AsfiFundTransferService {
 
   async create(requestDto: CreateAsfiFundTransferDto, user: User, credentials: IAsfiCredentials) {
     try {
-      // await this.checkTransferCodes(requestDto.details, credentials);
+      await this.checkTransferCodes(requestDto.details, credentials);
 
       const { asfiRequestId, requestCode, details, ...dtoProps } = requestDto;
 
@@ -70,10 +70,10 @@ export class AsfiFundTransferService {
         include: { file: true, asfiRequest: true },
       });
 
-      // const result = await this.sendAsfiRequest(createdRequest, requestDto.details);
-      return this.plainAsfiFundRequest(createdRequest);
+      const result = await this.sendAsfiRequest(createdRequest, requestDto.details, credentials);
+      return this.plainAsfiFundRequest(result);
     } catch (error) {
-      console.log(error);
+      console.log('Error creacion asfi transfer request', error);
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException();
     }
@@ -82,7 +82,7 @@ export class AsfiFundTransferService {
   async update(id: string, requestDto: UpdateAsfiFundTransferDto, credentials: IAsfiCredentials) {
     try {
       const { file, details, requestCode, asfiRequestId, ...dtoProps } = requestDto;
-      // await this.checkTransferCodes(details, credentials);
+      await this.checkTransferCodes(details, credentials);
 
       const requestDB = await this.prisma.asfiFundTransfer.findUnique({ where: { id }, include: { file: true } });
       if (!requestDB) throw new NotFoundException(`Request ${id} not found`);
@@ -127,10 +127,10 @@ export class AsfiFundTransferService {
         });
         return updatedRequest;
       });
-      // const result = await this.sendAsfiRequest(updatedRequest, details, credentials);
-      return this.plainAsfiFundRequest(updatedRequest);
+      const result = await this.sendAsfiRequest(updatedRequest, details, credentials);
+      return this.plainAsfiFundRequest(result);
     } catch (error) {
-      console.log(error);
+      console.log('Error actualizacion asfi transfer request', error);
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException();
     }
