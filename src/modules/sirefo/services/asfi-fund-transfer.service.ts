@@ -54,7 +54,7 @@ export class AsfiFundTransferService {
           requestCode: citeCode,
           quantityDetail: details.length,
           sentDate: currentDate,
-          userName: 'luiz.perez',
+          userName: credentials.email,
           asfiRequest: {
             connect: {
               id: asfiRequest.id,

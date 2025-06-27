@@ -411,7 +411,7 @@ export class XmlService {
         detail.accountCurrency,
         detail.transferCode,
         entity,
-        'luis.perez',
+        credentials.email,
       ]
         .map((item) => (item ? item.toString().trim() : ''))
         .join('');
@@ -472,7 +472,7 @@ export class XmlService {
         .txt(entity)
         .up()
         .ele('lym:Usuario')
-        .txt('luis.perez')
+        .txt(credentials.email)
         .up()
         .up()
         .up();

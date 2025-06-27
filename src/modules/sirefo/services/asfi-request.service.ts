@@ -41,7 +41,7 @@ export class AsfiRequestService {
           requestCode: citeCode,
           quantityDetail: details.length,
           sentDate: currentDate,
-          userName: 'luiz.perez',
+          userName: credentials.email,
           file: {
             create: {
               fileName: file.fileName,
